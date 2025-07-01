@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HTML 运行器 - GitHub Pages 部署</title>
+    <!-- 使用国内CDN加速SheetJS库 -->
+    <script src="https://cdn.staticfile.net/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #2575fc 0%, #6a11cb 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .github-corner {
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 0;
+            width: 80px;
+            height: 80px;
+            z-index: 10;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .content {
+                flex-direction: row;
+            }
+        }
+        
+        .input-section, .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #2575fc;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            font-size: 1.4rem;
+        }
+        
+        textarea {
+            width: 100%;
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: none;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #2575fc;
+            box-shadow: 0 0 0 2px rgba(37, 117, 252, 0.2);
+        }
+        
+        .preview-container {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button i {
+            font-size: 1.2rem;
+        }
+        
+        .run-btn {
+            background: linear-gradient(135deg, #00b712 0%, #5aff15 100%);
+            color: white;
+        }
+        
+        .run-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 183, 18, 0.3);
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #f5515f 0%, #9f041b 100%);
+            color: white;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 81, 95, 0.3);
+        }
+        
+        .export-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .examples {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #2575fc;
+        }
+        
+        .examples h3 {
+            margin-bottom: 10px;
+            color: #2575fc;
+        }
+        
+        .example-code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 767px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .input-section, .output-section {
+                min-height: 300px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="https://github.com/" class="github-corner" target="_blank">
+                <svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;">
+                    <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+                    <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+                    <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
+                </svg>
+            </a>
+            <h1>HTML 运行器</h1>
+            <p class="subtitle">在浏览器中运行 HTML 并导出为 Excel | GitHub Pages 部署</p>
+        </header>
+        
+        <div class="content">
+            <div class="input-section">
+                <h2 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                    </svg>
+                    HTML 代码输入
+                </h2>
+                <textarea id="htmlInput" placeholder="在此输入您的 HTML 代码...">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;示例页面&lt;/title&gt;
+    &lt;style&gt;
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;欢迎使用 HTML 运行器&lt;/h1&gt;
+    &lt;p&gt;这是一个示例 HTML 页面&lt;/p&gt;
+    
+    &lt;table&gt;
+        &lt;tr&gt;
+            &lt;th&gt;姓名&lt;/th&gt;
+            &lt;th&gt;邮箱&lt;/th&gt;
+            &lt;th&gt;城市&lt;/th&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td&gt;张三&lt;/td&gt;
+            &lt;td&gt;zhangsan@example.com&lt;/td&gt;
+            &lt;td&gt;北京&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td&gt;李四&lt;/td&gt;
+            &lt;td&gt;lisi@example.com&lt;/td&gt;
+            &lt;td&gt;上海&lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</textarea>
+                
+                <div class="controls">
+                    <button class="run-btn" onclick="runHtml()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                        </svg>
+                        运行代码
+                    </button>
+                    <button id="downloadBtn" class="export-btn" onclick="exportToExcel()" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        导出 Excel
+                    </button>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h2 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2zm6 5a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0v-1.5A.5.5 0 0 1 8 8zm0 3a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0v-1.5A.5.5 0 0 1 8 11zm3-3a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0v-1.5a.5.5 0 0 1 .5-.5zm0 3a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0v-1.5a.5.5 0 0 1 .5-.5zm-6-6a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0v-1.5A.5.5 0 0 1 5 5zm0 3a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0v-1.5A.5.5 0 0 1 5 8z"/>
+                    </svg>
+                    运行结果预览
+                </h2>
+                <div class="preview-container">
+                    <iframe id="resultFrame" title="HTML 预览"></iframe>
+                </div>
+            </div>
+        </div>
+        
+        <div class="examples">
+            <h3>示例代码</h3>
+            <p>尝试在左侧输入框中粘贴以下代码：</p>
+            
+            <div class="example-code">
+&lt;h1 style="color: #e74c3c;"&gt;HTML 示例&lt;/h1&gt;
+&lt;p&gt;当前时间: &lt;span id="time"&gt;&lt;/span&gt;&lt;/p&gt;
+&lt;script&gt;
+  function updateTime() {
+    document.getElementById('time').textContent = new Date().toLocaleTimeString();
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
+&lt;/script&gt;
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 HTML 运行器 | 使用 GitHub Pages 免费部署 | SheetJS 提供 Excel 导出功能</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 初始化页面时运行默认代码
+        window.onload = function() {
+            runHtml();
+        };
+        
+        function runHtml() {
+            const htmlCode = document.getElementById('htmlInput').value;
+            const iframe = document.getElementById('resultFrame');
+            
+            // 创建完整的HTML文档
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(htmlCode);
+            doc.close();
+            
+            document.getElementById('downloadBtn').disabled = false;
+        }
+        
+        function exportToExcel() {
+            try {
+                const htmlCode = document.getElementById('htmlInput').value;
+                
+                // 创建一个包含HTML代码的工作表
+                const ws = XLSX.utils.aoa_to_sheet([
+                    ["HTML 代码"],
+                    [htmlCode]
+                ]);
+                
+                // 尝试从预览iframe中提取表格数据
+                try {
+                    const iframeDoc = document.getElementById('resultFrame').contentDocument;
+                    const tables = iframeDoc.querySelectorAll('table');
+                    
+                    if (tables.length > 0) {
+                        // 使用第一个表格创建新工作表
+                        const table = tables[0];
+                        const tableWs = XLSX.utils.table_to_sheet(table);
+                        
+                        // 创建工作簿并添加工作表
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "HTML 代码");
+                        XLSX.utils.book_append_sheet(wb, tableWs, "表格数据");
+                        
+                        // 生成Excel文件并下载
+                        XLSX.writeFile(wb, "html-export.xlsx");
+                        return;
+                    }
+                } catch (e) {
+                    console.log("表格提取失败:", e);
+                }
+                
+                // 如果没有表格，仅导出HTML代码
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "HTML 代码");
+                XLSX.writeFile(wb, "html-export.xlsx");
+                
+            } catch (error) {
+                alert("导出失败: " + error.message);
+                console.error("导出错误:", error);
+            }
+        }
+    </script>
+</body>
+</html>
